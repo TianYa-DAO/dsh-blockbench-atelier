@@ -1,0 +1,22 @@
+{
+  "name": "dsh-mc-atelier",
+  "version": "0.1.0",
+  "description": "Evidence-grounded Minecraft Blockbench modeling and pixel texture skills for DSH.",
+  "type": "module",
+  "license": "MIT",
+  "main": "lib/index.js",
+  "exports": { ".": "./lib/index.js", "./cordis.patch.yml": "./cordis.patch.yml" },
+  "bin": { "mc-atelier": "bin/mc-atelier.js" },
+  "engines": { "node": ">=22.19.0" },
+  "keywords": ["dsh-plugin", "dsh-skill", "minecraft", "blockbench", "pixel-art", "bedrock"],
+  "files": ["lib", "bin", "skills", "references", "examples", "cordis.patch.yml", "README.md", "LICENSE"],
+  "scripts": {
+    "test": "node --test tests/*.test.js",
+    "check": "node scripts/check.js",
+    "catalog": "node bin/mc-atelier.js catalog"
+  },
+  "dependencies": { "pngjs": "^7.0.0" },
+  "peerDependencies": { "@deepseek-ai/cordis": ">=4.0.4", "@deepseek-ai/dsh-tools": ">=0.2.0-rc.2", "@deepseek-ai/dsh-skill": "*" },
+  "peerDependenciesMeta": { "@deepseek-ai/dsh-skill": { "optional": true } },
+  "dsh": { "bundle": { "patch": "./cordis.patch.yml" } }
+}
