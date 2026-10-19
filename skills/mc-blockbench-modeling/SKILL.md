@@ -27,6 +27,21 @@ whenToUse: 用户要创建或修改 Minecraft 模型、分析 .bbmodel、规划 
 
 样本较少，无法证明任何建模习惯更美观、更高效或更兼容。只把这些事实作为检查线索，并以用户目标、Blockbench 和目标运行时验证为准。
 
+## 真机实测（Blockbench 5.2.2 Desktop，2026-10-19）
+
+这些是操作 Blockbench 本体时踩到的、文档里查不到的事实。
+
+1. **插件文件名必须等于 `Plugin.register()` 的 id。** 文件名不匹配时 Blockbench 弹窗拒绝加载（"Ensure that the base file name of the plugin matches the plugin ID"），插件静默不生效。
+2. **Blockbench 不会自动加载 plugins 目录里的 .js。** 已用只做 `console.log` 的探针证伪：放进目录、重启、日志零输出。必须经插件管理器或 `Plugins.installed` + `BBPlugin.prototype.loadFromFile({path})` 装载。
+3. **插件 require 有白名单。** `SAFE_APIS`（免权限）= path/crypto/events/zlib/timers/url/string_decoder/querystring/constants/buffer/stream/perf_hooks；`REQUESTABLE_APIS`（需用户授权）= fs/process/child_process/https/net/tls/util/os/v8/dialog/clipboard/shell。**`http` 两个表都不在**，`require("http")` 抛 "not supported"——插件里起本地服务只能用 **`net`**（裸 TCP）。
+4. **权限文件只在启动时读。** 权限存在用户数据目录的 `plugin_permissions.json`（格式 `{"<plugin_id>":{"allowed":{"net":true}}}`）。运行期修改无效，且首次 `require` 会弹同步模态框；无人值守环境下模态框会**卡死渲染进程**（表现为 CDP 超时、端口 CLOSED）。启动前预置该文件即可免弹框。
+5. **加载插件时可借 `Plugin.loadFromFile({path: ...})`**，它接收的是**对象**不是路径字符串，且会把实例 id 改写成文件名派生值，所以文件名要和权限表里的 id 对上。
+6. **窗口被遮挡会节流渲染。** 视口显示 0 FPS 时，CDP 的 `Page.captureScreenshot` 会反复返回同一张旧帧（逐字节相同），看起来像"模型是黑的"。用 `Emulation.setFocusEmulationEnabled` 可把 FPS 拉回，但截到的帧仍可能是旧的——**判定渲染结果优先用视口现场或换一台前台窗口，不要只凭截图**。
+
+## 与本插件的关系
+
+`mc_bbmodel_inspect` / `mc_bbmodel_validate` 只读磁盘上的 `.bbmodel`，**不连接正在运行的 Blockbench**，也无法替代视口观察。要确认渲染、UV 接缝与材质观感，必须在目标版本 Blockbench 里打开看。
+
 ## 结构校验边界
 
 校验结果只覆盖插件明确检查的结构问题。它不能识别视觉比例、穿插是否可接受、纹理接缝观感、动画意图、发光材质行为、许可或 Minecraft 版本兼容性。分析前先获得用户对本地文件的明确选择；不要复制、上传或把私人参考素材写入输出。

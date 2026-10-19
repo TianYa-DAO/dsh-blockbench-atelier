@@ -3,6 +3,7 @@ import { mkdtemp, readFile, rm, writeFile } from "node:fs/promises";
 import { tmpdir } from "node:os";
 import { isAbsolute, join, resolve, sep } from "node:path";
 import test from "node:test";
+import { PNG } from "pngjs";
 import { catalog } from "../bin/mc-atelier.js";
 import { createModel } from "../lib/generate.js";
 import { analyzeModel, boxFaces, validateModel } from "../lib/model.js";
@@ -85,6 +86,44 @@ test("generator refuses to replace an existing output", async t => {
   await writeFile(modelPath, original);
   await assert.rejects(createModel(spec, { modelPath }), /never overwritten/i);
   assert.equal(await readFile(modelPath, "utf8"), original);
+});
+
+function flatAtlas(width, height, [r, g, b, a]) {
+  const png = new PNG({ width, height });
+  for (let i = 0; i < png.data.length; i += 4) { png.data[i] = r; png.data[i + 1] = g; png.data[i + 2] = b; png.data[i + 3] = a; }
+  return "data:image/png;base64," + PNG.sync.write(png).toString("base64");
+}
+
+function minimalModel(texture, faces) {
+  return {
+    meta: { format_version: "5.0", model_format: "bedrock_block", box_uv: false },
+    resolution: { width: 16, height: 16 },
+    elements: [{ uuid: "e1", name: "c", type: "cube", from: [0, 0, 0], to: [16, 16, 16], faces }],
+    groups: [], outliner: ["e1"], textures: [texture]
+  };
+}
+
+test("validator flags a texture whose uv_width disagrees with the project resolution", () => {
+  const texture = { name: "atlas", width: 64, height: 64, uv_width: 64, uv_height: 64, source: flatAtlas(64, 64, [90, 95, 98, 255]) };
+  const model = minimalModel(texture, { north: { uv: [0, 0, 16, 16], texture: 0 } });
+  const issues = validateModel(model).issues;
+  assert.ok(issues.some(issue => issue.code === "UV_SPACE"), "uv_width/resolution mismatch must be reported");
+});
+
+test("validator flags a face sampling a fully transparent atlas region", () => {
+  const texture = { name: "atlas", width: 16, height: 16, source: flatAtlas(16, 16, [0, 0, 0, 0]) };
+  const model = minimalModel(texture, { north: { uv: [0, 0, 16, 16], texture: 0 } });
+  const issues = validateModel(model).issues;
+  assert.ok(issues.some(issue => issue.code === "UV_BLANK"), "fully transparent region must be reported");
+});
+
+test("a generated opaque atlas reports no UV_BLANK", async t => {
+  const directory = await temporaryDirectory(t);
+  const modelPath = join(directory, "creature.bbmodel");
+  await createModel(spec, { modelPath });
+  const model = JSON.parse(await readFile(modelPath, "utf8"));
+  const issues = validateModel(model).issues.filter(issue => issue.code === "UV_BLANK");
+  assert.equal(issues.length, 0, JSON.stringify(issues));
 });
 
 test("catalog reports metadata without embedding source image bytes", async t => {
