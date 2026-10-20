@@ -1,15 +1,44 @@
 # Blockbench Atelier
 
-Blockbench Atelier 是一个 DSH 插件，为 Blockbench Minecraft 建模与像素纹理工作流提供本地检查工具、结构校验、生成起点和两份可按需调用的技能指南。
+Blockbench Atelier 是一个 DSH 插件，为 Blockbench Minecraft 建模与像素纹理工作流提供两半能力：**离线文件工具**（直接读写磁盘上的 `.bbmodel` 与 PNG，不需要 Blockbench 在运行）与**直连通道**（连到正在运行的 Blockbench，看当前画面、改当前工程）。两者装在同一个插件里。
 
 ## 能力
 
-- `mc_bbmodel_inspect`：汇总几何、层级、旋转、UV 覆盖、纹理尺寸与统计信息。
-- `mc_bbmodel_validate`：检查 UUID、outliner 引用、几何范围、纹理引用、PNG 解码和 UV 图集边界。
-- `mc_texture_analyze`：统计 PNG 的透明度、可见色、亮度、邻色对比和逻辑 UV 缩放。
-- `mc_bbmodel_create`：按 JSON cuboid 规格创建新的 `.bbmodel`，使用独占创建，不覆盖现有文件。
-- 两项 DSH 技能：`mc-blockbench-modeling` 与 `mc-pixel-textures`。
-- CLI 支持 `inspect`、`validate`、`texture`、`create` 和本地 `catalog`。
+### 离线工具（不需要 Blockbench 运行）
+
+1. `mc_bbmodel_inspect`：汇总几何、层级、旋转、UV 覆盖、纹理尺寸与统计信息。
+2. `mc_bbmodel_validate`：检查 UUID、outliner 引用、几何范围、纹理引用、PNG 解码、逐面 UV 图集边界，并报告 `UV_SPACE`（贴图逻辑尺寸与项目分辨率不一致）与 `UV_BLANK`（面采样区域全透明）。
+3. `mc_texture_analyze`：统计 PNG 的透明度、可见色、亮度、邻色对比和逻辑 UV 缩放。
+4. `mc_bbmodel_create`：按 JSON cuboid 规格创建新的 `.bbmodel`，使用独占创建，不覆盖现有文件。
+5. 两项 DSH 技能：`mc-blockbench-modeling` 与 `mc-pixel-textures`。
+6. CLI 支持 `inspect`、`validate`、`texture`、`create` 和本地 `catalog`。
+
+### 直连工具（Blockbench 必须开着）
+
+1. `mc_live_see`：把当前模型渲染成 PNG 并返回文件路径，配合 `read_image` 形成看-改闭环。
+2. `mc_live_do`：一次往返批量执行操作，只回摘要；`txn=rollback` 可把整批撤销，方便试完就退。
+3. `mc_live_state`：读当前工程摘要、cube、group、纹理与动画。
+4. `mc_live_ops`：列出通道支持的全部操作及其参数形状，动手前先查，不要猜操作名。
+5. `mc_live_txn`：`undo`、`redo`、`mark`、`rollback_to`。
+6. `mc_live_export`：导出 `bedrock_geo`、`bedrock_anim`、`gltf` 或 `png`。
+7. `mc_live_preset`：本地 JSON 配方库，`list`、`save`、`apply`。
+8. `mc_live_doctor`：`doctor`、`status`、`probe`；只有返回 `kind=ok` 才算通道真的通了。
+
+## 直连通道：Blockbench 侧插件安装
+
+直连需要在 Blockbench 里装配套插件 `addon/bb-bridge.js`。它把 Blockbench 变成一个本地 TCP 服务（`127.0.0.1:9878`），DSH 侧的工具通过它看画面、改模型。
+
+1. 把 `addon/bb-bridge.js` 复制到 Blockbench 插件目录，**文件名必须保持 `bb_bridge.js`**（Blockbench 要求文件名等于 `Plugin.register()` 的 id，改名会被拒绝加载）：
+   - Windows：`%APPDATA%\Blockbench\plugins\`
+   - macOS：`~/Library/Application Support/Blockbench/plugins/`
+   - Linux：`~/.config/Blockbench/plugins/`
+2. 重启 Blockbench。它**不会**自动加载目录里新放的 `.js`。
+3. 首次使用会弹权限框，选 **Always allow for this plugin** 授予 `net` 权限。Blockbench 的 `require` 有白名单，**`http` 不可用**，本地服务只能用 `net`。
+4. 用 `mc_live_doctor` 的 `op=doctor` 验收，返回 `kind=ok` 即接通。
+
+端口默认 9878，可用环境变量 `BB_RT_PORT` 覆盖。无人值守环境可在 Blockbench 用户数据目录预置 `plugin_permissions.json`：`{"bb_bridge":{"allowed":{"net":true}}}`（该文件只在启动时读取）。
+
+协议、操作清单与实测记录见 [`references/live-channel-contract.md`](references/live-channel-contract.md)、[`references/live-channel-integration-test.md`](references/live-channel-integration-test.md)、[`references/live-channel-design-notes.md`](references/live-channel-design-notes.md)。
 
 生成器创建的是可在 Blockbench 中继续编辑的 Bedrock 风格 `.bbmodel` 起点，不是完整游戏资源包，也不会代替目标版本的导出和游戏内检查。
 
