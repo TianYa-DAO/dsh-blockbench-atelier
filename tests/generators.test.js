@@ -64,11 +64,24 @@ test("the crown is a closed ring with merlons, gems and a plume", () => {
 });
 
 
-test("the wing family is honestly marked as a draft", () => {
+test("the wing is a released family built from rotated bones", () => {
   const wing = listFamilies().find(f => f.family === "creature-wing");
-  assert.equal(wing.quality, "draft", "the wing silhouette is not final, it must stay a draft");
-  const released = listFamilies().filter(f => f.quality === "release").map(f => f.family);
-  assert.equal(released.includes("creature-wing"), false);
+  assert.equal(wing.quality, "release");
+  const forged = forgeModel({ family: "creature-wing", params: {} });
+  assert.equal(forged.stats.validate.errors, 0);
+  const rotated = forged.model.elements.filter(e => e.rotation.some(v => v !== 0));
+  assert.ok(rotated.length >= 10, "the wing must be built from rotated bones, got " + rotated.length);
+  const pivots = rotated.filter(e => e.origin.some(v => Math.abs(v) > 0.001));
+  assert.ok(pivots.length >= 10, "rotated bones need a real pivot, got " + pivots.length);
+});
+
+test("forge copies rotation and origin declared by a part", () => {
+  const forged = forgeModel({ family: "creature-wing", params: {} });
+  for (const element of forged.model.elements) {
+    assert.ok(Array.isArray(element.rotation) && element.rotation.length === 3, element.name + " rotation shape");
+    assert.ok(Array.isArray(element.origin) && element.origin.length === 3, element.name + " origin shape");
+    assert.ok(element.rotation.every(v => Number.isFinite(v)), element.name + " rotation finite");
+  }
 });
 
 test("every family parameter really changes the silhouette", () => {
