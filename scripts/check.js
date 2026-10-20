@@ -2,8 +2,8 @@ import { spawnSync } from "node:child_process";
 import { existsSync } from "node:fs";
 
 const files = [
-  "lib/index.js", "lib/model.js", "lib/texture.js", "lib/generate.js", "lib/live.js", "lib/live-codec.js", "lib/op-catalog.js",
-  "bin/bb-atelier.js", "scripts/check.js", "tests/model.test.js", "tests/texture.test.js", "tests/live.test.js"
+  "lib/index.js", "lib/model.js", "lib/texture.js", "lib/generate.js", "lib/live.js", "lib/live-codec.js", "lib/op-catalog.js", "lib/model-forge.js", "lib/generators/",
+  "bin/bb-atelier.js", "scripts/check.js", "tests/model.test.js", "tests/texture.test.js", "tests/live.test.js", "tests/generators.test.js"
 ];
 
 for (const file of files) {
