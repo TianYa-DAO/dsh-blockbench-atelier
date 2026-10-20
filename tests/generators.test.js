@@ -36,16 +36,16 @@ test("every registered family forges a clean model with default parameters", () 
   }
 });
 
-test("blade segments tile the texture continuously instead of repeating it", () => {
+test("blade segments tile the texture continuously instead of repeating it", async () => {
   const { getFamily } = await import("../lib/generators/index.js");
   const parts = getFamily("weapon-sword").build({ variant: "greatsword" });
   const segments = parts.filter(p => p.uvRange && /^blade_\d+_spine$/.test(p.name));
   assert.ok(segments.length >= 8, "expected many sliced blade segments, got " + segments.length);
   segments.sort((a, b) => a.from[1] - b.from[1]);
-  assert.ok(Math.abs(segments[0].uvRange.v1) < 1e-6, "bottom of the blade must start at v=0");
-  assert.ok(Math.abs(segments[segments.length - 1].uvRange.v2 - 1) < 1e-6, "tip must end at v=1");
+  assert.ok(Math.abs(segments[0].uvRange.v2 - 1) < 1e-6, "the blade base must sample the bottom of the tile, got v2=" + segments[0].uvRange.v2);
+  assert.ok(Math.abs(segments[segments.length - 1].uvRange.v1) < 1e-6, "the tip must sample the top of the tile, got v1=" + segments[segments.length - 1].uvRange.v1);
   for (let i = 1; i < segments.length; i++) {
-    assert.ok(Math.abs(segments[i].uvRange.v1 - segments[i - 1].uvRange.v2) < 1e-6, "gap between blade segments " + i);
+    assert.ok(Math.abs(segments[i].uvRange.v2 - segments[i - 1].uvRange.v1) < 1e-6, "gap between blade segments " + i);
   }
 });
 
