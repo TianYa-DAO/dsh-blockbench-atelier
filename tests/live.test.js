@@ -61,11 +61,22 @@ test("see keeps a dedupe fingerprint and accepts a size cap", () => {
   assert.match(source, /force/);
 });
 
-test("live module declares the nine direct-channel tools and exports the registrar", () => {
+test("the job layer declares a registry, a ttl and per-kind budgets", () => {
+  const source = readFileSync(new URL("../lib/live.js", import.meta.url), "utf8");
+  assert.match(source, /const JOBS = new Map\(\)/);
+  assert.match(source, /JOB_TTL_MS/);
+  assert.match(source, /JOB_BUDGET = \{ batch:/);
+  assert.match(source, /function startJob\(kind, params\)/);
+  assert.match(source, /function jobView\(job\)/);
+  assert.match(source, /finishJobPayload/);
+  for (const op of ["start", "status", "collect", "wait", "list", "kill"]) assert.equal(source.includes('op === "' + op + '"'), true, op);
+});
+
+test("live module declares the ten direct-channel tools and exports the registrar", () => {
   const source = readFileSync(new URL("../lib/live.js", import.meta.url), "utf8");
   assert.match(source, /export function registerLive\(ctx\)/);
   const names = [...source.matchAll(/name: "(mc_live_[a-z_]+)"/g)].map(m => m[1]).sort();
-  assert.deepEqual(names, ["mc_live_do", "mc_live_doctor", "mc_live_eval", "mc_live_export", "mc_live_ops", "mc_live_preset", "mc_live_see", "mc_live_state", "mc_live_txn"]);
+  assert.deepEqual(names, ["mc_live_do", "mc_live_doctor", "mc_live_eval", "mc_live_export", "mc_live_job", "mc_live_ops", "mc_live_preset", "mc_live_see", "mc_live_state", "mc_live_txn"]);
   assert.doesNotMatch(source, /export const name =/);
   assert.doesNotMatch(source, /export const inject =/);
 });
