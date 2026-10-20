@@ -63,6 +63,14 @@ test("the crown is a closed ring with merlons, gems and a plume", () => {
   assert.equal(forged.stats.validate.errors, 0);
 });
 
+
+test("the wing family is honestly marked as a draft", () => {
+  const wing = listFamilies().find(f => f.family === "creature-wing");
+  assert.equal(wing.quality, "draft", "the wing silhouette is not final, it must stay a draft");
+  const released = listFamilies().filter(f => f.quality === "release").map(f => f.family);
+  assert.equal(released.includes("creature-wing"), false);
+});
+
 test("every family parameter really changes the silhouette", () => {
   for (const entry of listFamilies()) {
     const params = entry.params || {};
