@@ -91,3 +91,8 @@ npm run check
 1. [`references/modeling-playbook.md`](references/modeling-playbook.md) —— 真机实测的建模工艺手册：管线选择、格式与贴图绑定顺序、UV 逻辑空间、多段台阶参数表、通道批量限制与验收清单。
 2. [`references/live-channel-contract.md`](references/live-channel-contract.md) —— 直连通道的协议、操作清单与实测限制。
 3. [`references/sample-derived-guidelines.md`](references/sample-derived-guidelines.md) —— 样本静态分析得出的结构线索。
+## 效率特性（v0.4.0）
+
+1. `mc_live_eval` —— 在 Blockbench 内跑任意 JS，**持久内核 `K`** 跨调用保留，兜住固定 op 覆盖不到的一切。
+2. `mc_live_ops` —— **本地目录**回答（零往返），每条带 `op / args / use / avoid`；`live=true` 才问 Blockbench。
+3. `mc_live_see` —— `max_size` 控制尺寸，**字节级去重**：与上一帧相同返回 `reused:true` 复用旧图，`force=true` 强制重写。省 token、省磁盘。

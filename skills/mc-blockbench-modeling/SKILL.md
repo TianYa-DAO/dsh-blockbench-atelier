@@ -56,3 +56,45 @@ whenToUse: 用户要创建或修改 Minecraft 模型、分析 .bbmodel、规划 
 6. 做"好看的"模型靠多段台阶：锥度 14 段、棱面三片叠、护手四段、宝石双面、符文走贴图。
 
 完整工艺、参数表与验收清单见 [`references/modeling-playbook.md`](../references/modeling-playbook.md)。
+## 配方（可直接跑）
+
+**R1 · 一把带贴图的剑**
+
+1. `mc_live_doctor(op="doctor")` → 必须 `kind=ok`。
+2. `mc_live_eval` → `newProject(Formats.bedrock)`。
+3. `mc_live_do` → `cube.add` 每批 10-15 个（剑身分段 / 护手四段 / 柄五段 / 柄头三件）。
+4. `mc_live_eval` → 建贴图（128x128，`uv_width=16`）→ 轮询等 `ctx.getImageData` 非空 → `updateMaterial()` → 逐 cube `applyTexture()` → 每面 `uv=[格*2, 0, 格*2+2, 2]`。
+5. `mc_live_see(max_size=640)` 看整体，再 `max_size=1024` 看细节。
+6. `mc_live_export(format="bedrock_geo", path=...)`，最后 `mc_bbmodel_validate` 离线复验。
+
+**R2 · 贴图绑不上（渲染成默认分件色）**
+
+按这个顺序排查，不要跳步：
+
+1. 项目格式是不是 `bedrock` / `bedrock_block`？`free` 格式永远绑不上。
+2. 图像加载完了吗？`fromDataURL` 是异步的，必须轮询到 `getImageData` 非全零。
+3. `texture.updateMaterial()` 调了吗？材质可能是图像加载前建的，`map` 为空。
+4. UV 是不是在 `applyTexture()` **之后**才写的？顺序反了会被重置。
+
+**R3 · 大批量建模超时**
+
+`mc_live_do` 单批超过约 50 个 `cube.add` 时客户端会超时（服务端其实已写入）。三条路：
+
+1. 拆到 10-15 个一批。
+2. 用 `mc_live_eval` 在 Blockbench 里直接循环建，一次往返。
+3. 离线生成 `.bbmodel` 再 `Codecs.project.parse` 载入。
+
+## 读图纪律（决定烧多少 token）
+
+1. 先 `max_size=384` 看轮廓方向，确认后再 640/1024 看细节。
+2. **同一个视角重复看图没有意义**：`mc_live_see` 会字节级去重，返回 `reused:true` 说明画面没变。
+3. 一次只看一个问题（轮廓 / 贴图 / 接缝），不要一张图问五件事。
+4. 换角度比放大有用：正面 + 侧面各一张，胜过正面四张。
+
+## 数值门（没到就别交付）
+
+1. 剑身锥度段数 ≥ 12（6 段会明显看到楼梯）。
+2. 长宽比 1.8-2.0 : 1（做到 3:1 会像针）。
+3. 单批 `cube.add` ≤ 15。
+4. `mc_bbmodel_validate`：`errors=0` 且 `outOfBounds=0`。
+5. 宝石与装饰必须**双面都有**，转到背面不能露馅。

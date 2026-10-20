@@ -2,7 +2,7 @@ import { spawnSync } from "node:child_process";
 import { existsSync } from "node:fs";
 
 const files = [
-  "lib/index.js", "lib/model.js", "lib/texture.js", "lib/generate.js", "lib/live.js", "lib/live-codec.js",
+  "lib/index.js", "lib/model.js", "lib/texture.js", "lib/generate.js", "lib/live.js", "lib/live-codec.js", "lib/op-catalog.js",
   "bin/bb-atelier.js", "scripts/check.js", "tests/model.test.js", "tests/texture.test.js", "tests/live.test.js"
 ];
 
@@ -14,7 +14,7 @@ for (const file of files) {
 }
 
 for (const file of ["README.md", "LICENSE", "references/sample-derived-guidelines.md",
-  "references/live-channel-contract.md", "references/modeling-playbook.md", "addon/bb-bridge.js",
+  "references/live-channel-contract.md", "references/modeling-playbook.md", "addon/bb-bridge.js", "llms.txt", "CHANGELOG.md",
   "skills/mc-blockbench-modeling/SKILL.md", "skills/mc-pixel-textures/SKILL.md", "examples/creature.json"]) {
   if (!existsSync(file)) throw new Error(`Required package content is missing: ${file}`);
 }

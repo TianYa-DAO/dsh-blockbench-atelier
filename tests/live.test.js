@@ -38,11 +38,34 @@ test("pickB64 prefers the documented payload keys", () => {
   assert.equal(pickB64(null), "");
 });
 
-test("live module declares the eight direct-channel tools and exports the registrar", () => {
+test("the local op catalog covers every channel op with usage guidance", async () => {
+  const { OP_CATALOG } = await import("../lib/op-catalog.js");
+  assert.equal(OP_CATALOG.length >= 15, true);
+  for (const entry of OP_CATALOG) {
+    assert.equal(typeof entry.op, "string");
+    assert.equal(entry.op.length > 0, true);
+    assert.equal(typeof entry.use, "string");
+    assert.equal(entry.use.length > 10, true);
+    assert.equal(typeof entry.avoid, "string");
+    assert.equal(entry.args && typeof entry.args === "object", true);
+  }
+  const ops = OP_CATALOG.map(e => e.op);
+  for (const required of ["cube.add", "cube.set", "uv.map", "project.new", "see"]) assert.equal(ops.includes(required), true, required);
+});
+
+test("see keeps a dedupe fingerprint and accepts a size cap", () => {
+  const source = readFileSync(new URL("../lib/live.js", import.meta.url), "utf8");
+  assert.match(source, /createHash\("sha256"\)/);
+  assert.match(source, /lastSee/);
+  assert.match(source, /max_size/);
+  assert.match(source, /force/);
+});
+
+test("live module declares the nine direct-channel tools and exports the registrar", () => {
   const source = readFileSync(new URL("../lib/live.js", import.meta.url), "utf8");
   assert.match(source, /export function registerLive\(ctx\)/);
   const names = [...source.matchAll(/name: "(mc_live_[a-z_]+)"/g)].map(m => m[1]).sort();
-  assert.deepEqual(names, ["mc_live_do", "mc_live_doctor", "mc_live_export", "mc_live_ops", "mc_live_preset", "mc_live_see", "mc_live_state", "mc_live_txn"]);
+  assert.deepEqual(names, ["mc_live_do", "mc_live_doctor", "mc_live_eval", "mc_live_export", "mc_live_ops", "mc_live_preset", "mc_live_see", "mc_live_state", "mc_live_txn"]);
   assert.doesNotMatch(source, /export const name =/);
   assert.doesNotMatch(source, /export const inject =/);
 });

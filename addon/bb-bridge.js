@@ -2,7 +2,7 @@
 'use strict';
 
 var PLUGIN_ID = 'bb_bridge';
-var PLUGIN_VERSION = '0.3.0';
+var PLUGIN_VERSION = '0.4.0';
 var HOST = '127.0.0.1';
 var DEFAULT_PORT = 9878;
 var MAX_LINE = 32 * 1024 * 1024;
@@ -1022,6 +1022,25 @@ async function doExport(params) {
   return { ok: true, format: format, path: wanted, encoding: 'utf8', content: text, bytes: utf8Len(text), written: false };
 }
 
+var EVAL_KERNEL = {};
+
+function evalJsonSafe(value) {
+  try { return JSON.parse(JSON.stringify(value === undefined ? null : value)); }
+  catch (e) { return { ok: false, unserializable: String(e) }; }
+}
+
+async function doEval(params) {
+  var p = params || {};
+  var code = p.code;
+  if (typeof code !== "string" || !code.trim()) throw new Error("eval requires a non-empty code string");
+  if (code.length > 200000) throw new Error("eval code exceeds 200000 characters");
+  var fn;
+  try { fn = new Function("K", "args", "return (async function(){\n" + code + "\n})();"); }
+  catch (e) { throw new Error("eval compile failed: " + e.message); }
+  var out = await fn(EVAL_KERNEL, p.args || {});
+  return { ok: true, value: evalJsonSafe(out), kernelKeys: Object.keys(EVAL_KERNEL) };
+}
+
 async function dispatch(method, params) {
   if (method === 'health') return { result: healthPayload(), ok: true };
   if (method === 'ops') return { result: { ok: true, ops: OPS_META }, ok: true };
@@ -1041,6 +1060,10 @@ async function dispatch(method, params) {
       angle_applied: cap.angle_applied, blank: cap.blank,
       created_project: cap.created_project, canvas: cap.canvas }, ok: true };
   }
+  if (method === 'eval') {
+    var ev = await doEval(params || {});
+    return { result: ev, ok: true };
+  }
   if (method === 'history') {
     var h = await doHistory(params || {});
     return { result: h, ok: !!h.ok, error: h.ok ? null : h.error };
@@ -1049,7 +1072,7 @@ async function dispatch(method, params) {
     var x = await doExport(params || {});
     return { result: x, ok: !!x.ok, error: x.ok ? null : x.error };
   }
-  throw new Error('unknown method: ' + method + ' (health|ops|state|op|batch|see|history|export)');
+  throw new Error('unknown method: ' + method + ' (health|ops|state|op|batch|see|history|export|eval)');
 }
 function sendLine(socket, obj) {
   return new Promise(function (resolve) {

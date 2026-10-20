@@ -1,0 +1,48 @@
+# DSH × Blockbench 建模工坊（dsh-blockbench-atelier）
+
+> DSH 插件：一半是**离线文件工具**（读写 .bbmodel / PNG，不需要 Blockbench 在跑），一半是**直连通道**（连正在运行的 Blockbench，看画面、改模型）。
+> 当前版本 v0.4.0。Blockbench 侧需要装 `addon/bb-bridge.js`（文件名必须 `bb_bridge.js`）。
+
+## 验收判据（没到就是没装好）
+
+1. `mc_live_doctor(op="doctor")` → `kind=ok`；连不上时它会给出可执行的修复步骤。
+2. `mc_live_see(max_size=512)` → 返回一张真实 PNG 的路径。
+3. `mc_bbmodel_validate` 对任意本次产出的 `.bbmodel` → `ok=true, errors=0`。
+
+## 工具面（13 个）
+
+离线（不需要 Blockbench）：`mc_bbmodel_inspect` · `mc_bbmodel_validate` · `mc_texture_analyze` · `mc_bbmodel_create`
+
+直连（Blockbench 必须开着）：
+
+1. `mc_live_see` —— 渲染一帧。`max_size` 控制尺寸省 token；与上一帧字节相同时 `reused:true` 复用旧图，`force=true` 强制重写。
+2. `mc_live_do` —— 一次往返批量执行操作（内层循环）。`txn=rollback` 整批撤销。**单批 10-15 个 cube**。
+3. `mc_live_eval` —— 逃生口：在 Blockbench 里跑任意 JS，**持久内核 `K`** 跨调用保留。兜住所有固定 op 覆盖不到的事。
+4. `mc_live_state` · 5. `mc_live_txn` · 6. `mc_live_export` · 7. `mc_live_preset`
+8. `mc_live_ops` —— **本地目录**回答（不走网络），每条带 op/args/何时用/何时别用；`live=true` 才问 Blockbench。
+9. `mc_live_doctor` —— `doctor`/`status`/`probe`。
+
+## 三条最容易踩的
+
+1. **带贴图的模型必须用 `bedrock` 格式**；`free` 格式下材质绑不上，渲染成默认分件色且不报错。
+2. **UV 空间 = 项目分辨率**（通常 16），不是 PNG 尺寸。128px 图集时 16px 材质格只占 2 个逻辑单位。
+3. **贴图顺序**：建贴图 → 等图像加载 → `updateMaterial()` → `applyTexture()` → 最后写 `face.texture` 与 `face.uv` → 三次 update。
+
+## 文档
+
+1. `references/modeling-playbook.md` —— 建模工艺手册（管线、格式、UV、多段台阶参数、批量限制、验收清单）
+2. `references/live-channel-contract.md` —— 通道协议与实测限制
+3. `skills/mc-blockbench-modeling/` —— 建模技能（含配方与读图纪律）
+4. `skills/mc-pixel-textures/` —— 像素贴图技能
+
+## 复现一个模型
+
+```text
+1. mc_live_doctor(op="doctor") 确认 kind=ok
+2. mc_live_eval(code="return (function(){ newProject(Formats.bedrock); return "ok"; })()")
+3. mc_live_do(ops=[...cube.add × 10-15...])
+4. mc_live_eval(code="<建贴图 + 绑材质 + 铺 UV>")
+5. mc_live_see(max_size=640) 看图
+6. mc_live_export(format="bedrock_geo", path="...")
+7. mc_bbmodel_validate(modelPath) 离线复验
+```
