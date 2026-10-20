@@ -4,7 +4,7 @@ import { tmpdir } from "node:os";
 import { isAbsolute, join, resolve, sep } from "node:path";
 import test from "node:test";
 import { PNG } from "pngjs";
-import { catalog } from "../bin/mc-atelier.js";
+import { catalog } from "../bin/bb-atelier.js";
 import { createModel } from "../lib/generate.js";
 import { analyzeModel, boxFaces, validateModel } from "../lib/model.js";
 
@@ -20,7 +20,7 @@ const spec = {
 };
 
 async function temporaryDirectory(t) {
-  const directory = await mkdtemp(join(tmpdir(), "mc-atelier-test-"));
+  const directory = await mkdtemp(join(tmpdir(), "bb-atelier-test-"));
   t.after(async () => {
     const absolute = resolve(directory), base = resolve(tmpdir()) + sep;
     assert.ok(absolute.startsWith(base), "test cleanup path must stay within the system temp directory");

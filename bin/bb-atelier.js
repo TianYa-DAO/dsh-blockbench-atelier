@@ -6,7 +6,7 @@ import { analyzeModel, loadModel, validateModel } from "../lib/model.js";
 import { createFromSpecFile } from "../lib/generate.js";
 import { inspectTexture } from "../lib/texture.js";
 
-const help = `MC Atelier - offline Blockbench inspection and Bedrock starter generation
+const help = `Blockbench Atelier - offline Blockbench inspection and Bedrock starter generation
 
 Commands:
   inspect <model.bbmodel>
@@ -71,7 +71,7 @@ export async function main(argv = process.argv.slice(2)) {
       }
     } else { process.stdout.write(help); process.exitCode = 2; return; }
     process.stdout.write(JSON.stringify(result, null, 2) + "\n");
-  } catch (error) { process.stderr.write(`mc-atelier: ${error.message}\n`); process.exitCode = 1; }
+  } catch (error) { process.stderr.write(`bb-atelier: ${error.message}\n`); process.exitCode = 1; }
 }
 
 if (process.argv[1] && import.meta.url === pathToFileURL(resolve(process.argv[1])).href) await main();

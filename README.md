@@ -1,6 +1,6 @@
-# MC Atelier
+# Blockbench Atelier
 
-MC Atelier 是一个 DSH 插件，为 Blockbench Minecraft 建模与像素纹理工作流提供本地检查工具、结构校验、生成起点和两份可按需调用的技能指南。
+Blockbench Atelier 是一个 DSH 插件，为 Blockbench Minecraft 建模与像素纹理工作流提供本地检查工具、结构校验、生成起点和两份可按需调用的技能指南。
 
 ## 能力
 
@@ -26,11 +26,11 @@ dsh plugin --profile web add .
 ## CLI 示例
 
 ```text
-node bin/mc-atelier.js inspect path/to/model.bbmodel
-node bin/mc-atelier.js validate path/to/model.bbmodel
-node bin/mc-atelier.js texture path/to/atlas.png --logical 16 16
-node bin/mc-atelier.js create examples/creature.json C:/output/new-creature.bbmodel
-node bin/mc-atelier.js catalog path/to/local-models C:/output/local-catalog.json
+node bin/bb-atelier.js inspect path/to/model.bbmodel
+node bin/bb-atelier.js validate path/to/model.bbmodel
+node bin/bb-atelier.js texture path/to/atlas.png --logical 16 16
+node bin/bb-atelier.js create examples/creature.json C:/output/new-creature.bbmodel
+node bin/bb-atelier.js catalog path/to/local-models C:/output/local-catalog.json
 ```
 
 输入模型和输出模型由调用者明确指定。`catalog` 会在本机结果中包含模型文件名、模型元数据和文件 SHA-256；不要将私人样本或其目录扫描结果提交到公开仓库。工具不会上传文件或抽取并发布嵌入纹理。

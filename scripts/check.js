@@ -3,7 +3,7 @@ import { existsSync } from "node:fs";
 
 const files = [
   "lib/index.js", "lib/model.js", "lib/texture.js", "lib/generate.js",
-  "bin/mc-atelier.js", "scripts/check.js", "tests/model.test.js", "tests/texture.test.js"
+  "bin/bb-atelier.js", "scripts/check.js", "tests/model.test.js", "tests/texture.test.js"
 ];
 
 for (const file of files) {
