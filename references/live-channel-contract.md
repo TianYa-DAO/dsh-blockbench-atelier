@@ -164,3 +164,11 @@ JSON 响应；`/see` 返回 `image/png` 字节。
 4. **代码不写注释、不出现中文**（用户硬规范）；说明写 README。
 5. `Undo` 必须成对（`initEdit`/`finishEdit`），否则会破坏 Edit Session 同步。
 6. 装 DSH 插件前**先备份** `cordis.patch.yml` 与 profile `package.json`（本机已有 .bak 惯例）。
+
+## 实测限制（2026-10，Blockbench 5.2.2）
+
+1. **大批量会超时**：一次 `batch` 提交 50 个以上 `cube.add` 时，客户端 60-90 秒收不到响应；服务端不报错，元素其实已写入。单批建议 10-15 个。
+2. **超时后先 `health` 核对 `elements`**，不要立刻重发同一批，否则容易重复添加。
+3. **通道只管几何与状态**。贴图绑定、材质重建这类渲染层操作没有对应 op，需要 CDP 或离线生成文件后 `Codecs.project.parse`。
+4. **`free` 格式下贴图绑不上**，贴图类模型请建 `bedrock` 或 `bedrock_block` 格式。
+5. 窗口被遮挡时渲染会被节流，`Page.captureScreenshot` 可能反复返回同一张旧帧（逐字节相同），此时应先 `Emulation.setFocusEmulationEnabled` 再确认 FPS。

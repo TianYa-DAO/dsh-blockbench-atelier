@@ -14,7 +14,7 @@ for (const file of files) {
 }
 
 for (const file of ["README.md", "LICENSE", "references/sample-derived-guidelines.md",
-  "references/live-channel-contract.md", "addon/bb-bridge.js",
+  "references/live-channel-contract.md", "references/modeling-playbook.md", "addon/bb-bridge.js",
   "skills/mc-blockbench-modeling/SKILL.md", "skills/mc-pixel-textures/SKILL.md", "examples/creature.json"]) {
   if (!existsSync(file)) throw new Error(`Required package content is missing: ${file}`);
 }

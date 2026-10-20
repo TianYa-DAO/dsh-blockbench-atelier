@@ -45,3 +45,14 @@ whenToUse: 用户要创建或修改 Minecraft 模型、分析 .bbmodel、规划 
 ## 结构校验边界
 
 校验结果只覆盖插件明确检查的结构问题。它不能识别视觉比例、穿插是否可接受、纹理接缝观感、动画意图、发光材质行为、许可或 Minecraft 版本兼容性。分析前先获得用户对本地文件的明确选择；不要复制、上传或把私人参考素材写入输出。
+
+## 操作要点（Blockbench 5.2.2 实测）
+
+1. **带贴图的立方体模型用 `bedrock` 格式**。`free` 格式下材质绑不上，渲染成默认分件色且不报错。
+2. **贴图顺序**：建贴图 → 轮询等图像加载完成 → `texture.updateMaterial()` → 逐 cube `applyTexture()` → 最后写 `face.texture` 与 `face.uv` → `Canvas.updateAllUVs/updateAllFaces/updateAll`。
+3. **UV 空间 = 项目分辨率**（通常 16），不是 PNG 尺寸。128px 图集时一个 16px 格只占 2 个逻辑单位。
+4. **不要手动赋 `mesh.material`**，`Canvas.updateAllFaces()` 会覆盖。
+5. **通道批量控制在 10-15 个 cube**；更大规模改为离线生成 `.bbmodel` 再 `Codecs.project.parse` 载入。
+6. 做"好看的"模型靠多段台阶：锥度 14 段、棱面三片叠、护手四段、宝石双面、符文走贴图。
+
+完整工艺、参数表与验收清单见 [`references/modeling-playbook.md`](../references/modeling-playbook.md)。

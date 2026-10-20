@@ -85,3 +85,9 @@ npm run check
 ## 安全边界
 
 分析器只读取用户指定的本地路径。生成器要求绝对输出路径，并以独占方式创建 `.bbmodel` 与可选 `.png`；目标已存在时拒绝覆盖。验证器是结构预检，不证明渲染质量、接缝效果、动画、游戏兼容性或许可。
+
+## 参考文档
+
+1. [`references/modeling-playbook.md`](references/modeling-playbook.md) —— 真机实测的建模工艺手册：管线选择、格式与贴图绑定顺序、UV 逻辑空间、多段台阶参数表、通道批量限制与验收清单。
+2. [`references/live-channel-contract.md`](references/live-channel-contract.md) —— 直连通道的协议、操作清单与实测限制。
+3. [`references/sample-derived-guidelines.md`](references/sample-derived-guidelines.md) —— 样本静态分析得出的结构线索。
