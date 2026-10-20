@@ -21,6 +21,36 @@ test("every material paints a full 16x16 opaque tile", () => {
   assert.equal(MATERIALS.gem.kind, "gem");
 });
 
+test("every registered family forges a clean model with default parameters", () => {
+  const families = listFamilies();
+  assert.ok(families.length >= 10, "expected at least 10 families, got " + families.length);
+  for (const entry of families) {
+    const forged = forgeModel({ family: entry.family, params: {} });
+    assert.equal(forged.stats.validate.errors, 0, entry.family + " errors: " + JSON.stringify(forged.stats.validate));
+    assert.ok(forged.stats.elements >= 25, entry.family + " only " + forged.stats.elements + " elements");
+    assert.equal(forged.model.textures[0].uv_width, 16, entry.family + " uv_width");
+    assert.ok(forged.stats.materials.length <= 8, entry.family + " uses more than 8 materials");
+    const lowest = Math.min(...forged.model.elements.map(e => Math.min(e.from[1], e.to[1])));
+    assert.equal(Number.isFinite(lowest), true, entry.family + " has a non-finite floor");
+    assert.ok(lowest <= 0, entry.family + " lowest point should be at or below the origin, got " + lowest);
+  }
+});
+
+test("every family parameter really changes the silhouette", () => {
+  for (const entry of listFamilies()) {
+    const params = entry.params || {};
+    const numeric = Object.keys(params).filter(k => params[k].type === "number");
+    if (!numeric.length) continue;
+    const low = {};
+    const high = {};
+    for (const key of numeric) { low[key] = params[key].min; high[key] = params[key].max; }
+    const a = forgeModel({ family: entry.family, params: low });
+    const b = forgeModel({ family: entry.family, params: high });
+    const changed = JSON.stringify(a.stats.bounds.size) !== JSON.stringify(b.stats.bounds.size) || a.stats.elements !== b.stats.elements;
+    assert.equal(changed, true, entry.family + " ignores its numeric parameters");
+  }
+});
+
 test("forging a longsword produces a valid textured model", () => {
   const forged = forgeModel({ family: "weapon-sword", params: { variant: "longsword" }, name: "t_sword" });
   assert.ok(forged.stats.elements >= 40, "expected a detailed blade, got " + forged.stats.elements);
@@ -50,5 +80,5 @@ test("variants change the silhouette and an unknown family is refused", () => {
   assert.ok(great.stats.elements > sword.stats.elements);
   assert.ok(sword.stats.elements > dagger.stats.elements);
   assert.ok(great.stats.bounds.size[1] > sword.stats.bounds.size[1]);
-  assert.throws(() => forgeModel({ family: "weapon-axe" }), /unknown family/);
+  assert.throws(() => forgeModel({ family: "weapon-axe_bogus" }), /unknown family/);
 });

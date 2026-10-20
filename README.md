@@ -96,3 +96,28 @@ npm run check
 1. `mc_live_eval` —— 在 Blockbench 内跑任意 JS，**持久内核 `K`** 跨调用保留，兜住固定 op 覆盖不到的一切。
 2. `mc_live_ops` —— **本地目录**回答（零往返），每条带 `op / args / use / avoid`；`live=true` 才问 Blockbench。
 3. `mc_live_see` —— `max_size` 控制尺寸，**字节级去重**：与上一帧相同返回 `reused:true` 复用旧图，`force=true` 强制重写。省 token、省磁盘。
+## 模型家族清单（v0.8.0）
+
+| 家族 id | 说明 | 参数 |
+| --- | --- | --- |
+| `weapon-sword` | 剑：长剑 / 巨剑 / 匕首 | variant, length, width, segments, guardSpan, grip, gems, runes |
+| `weapon-axe` | 战斧（单刃 / 双刃） | haftLen, headSize, bladeReach, beard, gripLen, doubleBit, topSpike, langets |
+| `weapon-spear` | 长矛 / 带翼戟 | shaftLen, headLen, headWidth, gripLen, barbs, wings, tassel, buttSpike |
+| `weapon-hammer` | 战锤（可带尖喙） | haftLen, headWidth, headHeight, headDepth, gripLen, crossPeen, faceSpikes, sidePlates |
+| `prop-lantern` | 提灯 / 路灯 / 桌灯 | height, width, style, panels, glow, roof, ring |
+| `prop-chest` | 箱 / 宝箱 | width, depth, height, bands, lid, lock, feet |
+| `prop-sign` | 告示牌 / 牌坊 | height, width, arms, plaque, roof, ornaments |
+| `creature-wing` | 翅膀（左右成对） | span, height, ribs, membrane, claw |
+| `creature-horn` | 角 / 头饰 | height, curve, segments, bands, spikes |
+| `armor-crown` | 王冠 | radius, height, points, gems, plume |
+
+一句话就能出成品（`mc_model_wish`），也可以直接指定家族与参数（`mc_model_forge`）。
+
+```text
+「一把华丽的大剑」→ greatsword, gems+runes, 71 部件, 17×38.1
+「一盏提灯」      → prop-lantern, 48 部件, 8.2×18×8.2
+「一顶王冠」      → armor-crown, 47 部件, 16×13×16
+「一杆长矛」      → weapon-spear, 42 部件, 4.9×38.3
+```
+
+原点约定：武器类原点在握把中部（便于手持摆位），道具/生物件最低点落在 y=0（便于直接摆在地上）。
