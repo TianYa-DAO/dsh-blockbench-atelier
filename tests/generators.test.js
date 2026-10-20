@@ -36,6 +36,33 @@ test("every registered family forges a clean model with default parameters", () 
   }
 });
 
+test("blade segments tile the texture continuously instead of repeating it", () => {
+  const { getFamily } = await import("../lib/generators/index.js");
+  const parts = getFamily("weapon-sword").build({ variant: "greatsword" });
+  const segments = parts.filter(p => p.uvRange && /^blade_\d+_spine$/.test(p.name));
+  assert.ok(segments.length >= 8, "expected many sliced blade segments, got " + segments.length);
+  segments.sort((a, b) => a.from[1] - b.from[1]);
+  assert.ok(Math.abs(segments[0].uvRange.v1) < 1e-6, "bottom of the blade must start at v=0");
+  assert.ok(Math.abs(segments[segments.length - 1].uvRange.v2 - 1) < 1e-6, "tip must end at v=1");
+  for (let i = 1; i < segments.length; i++) {
+    assert.ok(Math.abs(segments[i].uvRange.v1 - segments[i - 1].uvRange.v2) < 1e-6, "gap between blade segments " + i);
+  }
+});
+
+test("the crown is a closed ring with merlons, gems and a plume", () => {
+  const forged = forgeModel({ family: "armor-crown", params: {} });
+  const names = forged.model.elements.map(e => e.name);
+  for (const part of ["band_front", "band_back", "band_left", "band_right", "band_cf", "band_cb", "band_cl", "band_cr"]) {
+    assert.ok(names.includes(part), "missing ring piece " + part);
+  }
+  assert.ok(names.filter(n => /^merlon_lo_/.test(n)).length >= 4, "crown needs merlons");
+  assert.ok(names.filter(n => /^gem_/.test(n)).length === 4, "crown needs four face gems");
+  assert.ok(names.includes("plume_top"), "crown needs a crest plume");
+  const size = forged.stats.bounds.size;
+  assert.ok(Math.abs(size[0] - size[2]) < 0.01, "a ring crown must be square in plan, got " + size);
+  assert.equal(forged.stats.validate.errors, 0);
+});
+
 test("every family parameter really changes the silhouette", () => {
   for (const entry of listFamilies()) {
     const params = entry.params || {};
