@@ -103,3 +103,44 @@
 2. 窗口被遮挡时渲染被节流，`canvas.toDataURL` 会返回过期帧；调试端口可用时先 `Emulation.setFocusEmulationEnabled`，或改用 `Page.captureScreenshot`（会强制出帧）。
 
 判定方法：连续抓两帧比对 sha256，相同就说明是过期帧而不是模型没变。
+## 11. 剑的解剖学参数表（2026-10-21 实测，三轮修正后）
+
+| 指标 | 目标值 | 踩过的错 | 门禁文件 |
+| --- | --- | --- | --- |
+| 剑身长宽比 | 6-10（longsword 20/2.6 = 7.7） | 1:3.8 读成三角巨剑 | tests/blade.test.js |
+| 深度/宽度 | 0.10-0.30（longsword 0.55/2.6 = 0.21） | 0.69 读成棍子 | tests/blade.test.js |
+| 锥度位置 | 前 75% 只收 11%，最后 25% 收尖 | 从底一路收到尖 = 圆锥 | tests/blade.test.js |
+| 护手全宽 | 剑身全宽 × 2.3 | 护手几乎等于剑身长 | tests/blade.test.js |
+| 整剑比例 | 约 4.5（真长剑约 4.4） | — | — |
+
+三个预设（改这六个值即可复现）：
+
+| 变体 | 剑身长 | 全宽 | 厚度 | 护手 | 柄长 |
+| --- | --- | --- | --- | --- | --- |
+| longsword | 20 | 2.6 | 0.55 | 6.0 | 4.2 |
+| greatsword | 26 | 3.2 | 0.65 | 7.4 | 5.4 |
+| dagger | 10 | 1.5 | 0.45 | 3.6 | 3.0 |
+
+### 厚度语义的坑（最容易翻车的一条）
+
+`thickness` 必须表示**全厚度**，内部用 `thickness / 2` 作为半深度。若直接把 `thickness` 当半深度（`-thick` 到 `thick`），实际深度翻倍，扁刃立刻变成方棍 —— 这条坑过一次，深度 1.8 对宽度 2.6。
+
+### 锥度公式（可复制）
+
+```text
+SHOULDER = 0.75
+DISTAL   = 0.11
+taperAt(halfWidth, t):
+  t <= SHOULDER -> halfWidth * (1 - DISTAL * t / SHOULDER)
+  否则          -> halfWidth * (1 - DISTAL) * ((1 - t) / (1 - SHOULDER)) ^ 0.62   // 下限 0.1
+```
+
+分段时每段取两端 `taperAt` 的较大值，避免出现反向盒。
+
+## 12. 侧边栏实时画面（v0.14.0 架构）
+
+1. **HTTP 桥** `lib/frame-server.js`：监听 `127.0.0.1:9879`（`BB_ATELIER_PANEL_PORT` 覆盖）。`GET /frame.png` 走通道 `see` 抓当前视口，`GET /status.json` 报连接状态 / 工程名 / 格式 / 元素数 / 帧计数。800ms 缓存 + 单飞，避免重复压 Blockbench。
+2. **依赖注入**：桥把「通道请求」作为参数注入，自己只依赖 `node:http` —— 因此不背 DSH peer 依赖，可以用假通道做单测。
+3. **客户端 bundle** `lib/client.js`：`window.__ModuleLoader__.load({ id, factory })`，只能 `require("react")`，不得 ESM / Node 内置 / 顶层 await。挂 `sidebar.panellist`（入口图标）+ `main`（页面，`key` 与入口 `id` 相同）。
+4. **接线**：`package.json` 的 `dsh.client = { inject: [], platform: "web" }` 与 `exports["./client"]`。
+5. **验收**：桥可以 `curl` 验（真机验过 53,788 字节 PNG、`connected:true`、缓存命中）；客户端面板要重启 DSH 才加载，重启会结束当前会话 —— 所以分两段验。
