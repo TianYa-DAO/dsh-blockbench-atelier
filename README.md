@@ -121,3 +121,31 @@ npm run check
 ```
 
 原点约定：武器类原点在握把中部（便于手持摆位），道具/生物件最低点落在 y=0（便于直接摆在地上）。
+## 侧边栏实时画面（v0.14.0）
+
+插件带一个 DSH 侧边栏面板，显示 Blockbench 当前视口的实时画面。边聊天边看模型，不用切窗口。
+
+### 组成
+
+1. `lib/frame-server.js` —— HTTP 桥，监听 `127.0.0.1:9879`（环境变量 `BB_ATELIER_PANEL_PORT` 可改）。`GET /frame.png` 抓当前视口，`GET /status.json` 返回连接状态、工程名、格式、元素数、帧计数。800ms 内的重复请求复用缓存。
+2. `lib/client.js` —— 浏览器半边，挂 `sidebar.panellist`（侧边栏入口）+ `main`（页面）。面板可见时每 1.5 秒自动刷新，切走停刷，另有手动刷新按钮。
+3. 面板依赖 `package.json` 的 `dsh.client = { platform: "web" }` 与 `exports["./client"]` 生效。
+
+### 验收步骤（重启 DSH 后）
+
+```text
+1. 确认 Blockbench 开着且 bb-bridge 插件已加载
+2. curl http://127.0.0.1:9879/status.json
+   期望: {"ok":true,... "channel":{"connected":true,"project":"...","elements":N}}
+3. curl -o frame.png http://127.0.0.1:9879/frame.png
+   期望: 得到一张 PNG，尺寸 480x480
+4. 重启 DSH
+5. 侧边栏应出现 "Blockbench" 入口，点开看到实时画面
+6. 在 Blockbench 里转动视角，面板 1.5 秒内跟着变
+```
+
+### 失败分支
+
+1. `curl` 连不上 9879：插件没启动桥，或端口被占 —— 设置 `BB_ATELIER_PANEL_PORT` 换个端口，并同步改前端 `localStorage["dsh-blockbench-atelier:bridge"]`。
+2. `status.json` 里 `channel.connected=false`：Blockbench 没开或 addon 没加载，先跑 `mc_live_doctor(op="doctor")`。
+3. 侧边栏没有入口：DSH 没重启，或 `dsh.client` 字段没被宿主读到（检查 `package.json`）。

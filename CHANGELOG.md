@@ -1,5 +1,27 @@
 # Changelog
 
+## v0.14.0
+
+**DSH 侧边栏实时画面面板** —— 边聊天边看 Blockbench 正在做的模型。
+
+### 新增
+
+1. **HTTP 桥** `lib/frame-server.js`：监听 `127.0.0.1:9879`，`GET /frame.png` 抓当前视口，`GET /status.json` 返回连接状态 / 工程名 / 格式 / 元素数 / 帧计数。带 800ms 缓存与并发合流，避免压 Blockbench。
+2. **客户端面板** `lib/client.js`：按 `window.__ModuleLoader__.load` 契约手写，挂 `sidebar.panellist`（入口图标）+ `main`（页面）。可见时 1.5 秒自动刷新、切走停刷、另有手动刷新。
+3. **打包接线**：`dsh.client = { platform: "web" }` 与 `exports["./client"]`。
+
+### 真机验证
+
+1. 桥起来后 `GET /status.json` → `200`，`channel.connected=true`，`project=wish_dagger`，`elements=51`。
+2. `GET /frame.png` → `200 image/png`，**53,788 字节真 PNG**，480x480，内容就是当时的 Blockbench 视口。
+3. 连抓两次字节完全相同 → 缓存生效，没有重复压 Blockbench。
+4. 单测 5 条：状态字段、PNG 字节、缓存只打一次通道、通道坏掉返回 503、未知路径 404。
+
+### 注意
+
+客户端面板要**重启 DSH** 才会加载。验收步骤写在 README「侧边栏实时画面」一节。
+
+## v0.13.0
 ## v0.13.0
 
 **剑的解剖学修正** —— 按真实长剑的比例重做，不再是从底收到尖的圆锥。

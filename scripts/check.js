@@ -2,8 +2,8 @@ import { spawnSync } from "node:child_process";
 import { existsSync } from "node:fs";
 
 const files = [
-  "lib/index.js", "lib/model.js", "lib/texture.js", "lib/generate.js", "lib/live.js", "lib/live-codec.js", "lib/op-catalog.js", "lib/model-forge.js", "lib/wish.js", "lib/generators/index.js", "lib/generators/materials.js", "lib/generators/atlas.js", "lib/generators/parts.js", "lib/generators/weapons.js", "lib/generators/props.js", "lib/generators/polearms.js", "lib/generators/creature.js", "lib/generators/crown.js", "lib/generators/wing.js",
-  "bin/bb-atelier.js", "scripts/check.js", "tests/model.test.js", "tests/texture.test.js", "tests/live.test.js", "tests/generators.test.js", "tests/wish.test.js", "tests/toggles.test.js", "tests/blade.test.js"
+  "lib/index.js", "lib/model.js", "lib/texture.js", "lib/generate.js", "lib/live.js", "lib/live-codec.js", "lib/op-catalog.js", "lib/model-forge.js", "lib/wish.js", "lib/frame-server.js", "lib/client.js", "lib/generators/index.js", "lib/generators/materials.js", "lib/generators/atlas.js", "lib/generators/parts.js", "lib/generators/weapons.js", "lib/generators/props.js", "lib/generators/polearms.js", "lib/generators/creature.js", "lib/generators/crown.js", "lib/generators/wing.js",
+  "bin/bb-atelier.js", "scripts/check.js", "tests/model.test.js", "tests/texture.test.js", "tests/live.test.js", "tests/generators.test.js", "tests/wish.test.js", "tests/toggles.test.js", "tests/blade.test.js", "tests/frame-server.test.js"
 ];
 
 for (const file of files) {
