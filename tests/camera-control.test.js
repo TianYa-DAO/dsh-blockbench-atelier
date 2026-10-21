@@ -1,6 +1,6 @@
 import assert from "node:assert/strict";
 import test from "node:test";
-import { buildOrbitCode, normalizeOrbitParams } from "../lib/camera-control.js";
+import { buildFitCode, buildOrbitCode, normalizeOrbitParams } from "../lib/camera-control.js";
 import { createFrameBridge, wheelToZoom } from "../lib/frame-server.js";
 
 test("orbit parameters are clamped and defaulted", () => {
@@ -77,6 +77,35 @@ test("orbit refuses an empty request and reports channel failures", async () => 
     const empty = await (await fetch(base + "/orbit")).json();
     assert.equal(empty.ok, false);
     assert.match(empty.error, /needs dx, dy or zoom/);
+  } finally {
+    await bridge.stop();
+  }
+});
+test("the fit code frames the whole model from its bounding box", () => {
+  const code = buildFitCode({ margin: 1.4 });
+  assert.match(code, /Outliner\.elements/);
+  assert.match(code, /cam\.position\.set/);
+  assert.match(code, /1\.4/);
+  assert.match(code, /P\.render/);
+  assert.match(code, /ctl\.target\.set/);
+  assert.equal(code.indexOf(String.fromCharCode(34)), -1, "the emitted fit code must not contain string literals");
+});
+
+test("the bridge fits the camera and drops the cached frame", async () => {
+  const calls = [];
+  const bridge = createFrameBridge({ port: 0, request: fakeChannel(calls) });
+  const started = await bridge.start();
+  const base = "http://127.0.0.1:" + String(started.port);
+  try {
+    await fetch(base + "/frame.png");
+    const before = calls.filter(c => c.method === "see").length;
+    const fit = await (await fetch(base + "/fit")).json();
+    assert.equal(fit.ok, true);
+    const evalCall = calls.filter(c => c.method === "eval").pop();
+    assert.match(evalCall.params.code, /Outliner\.elements/);
+    await fetch(base + "/frame.png");
+    const after = calls.filter(c => c.method === "see").length;
+    assert.equal(after, before + 1, "fit must invalidate the cached frame");
   } finally {
     await bridge.stop();
   }
