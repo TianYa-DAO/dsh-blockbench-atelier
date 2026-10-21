@@ -39,7 +39,7 @@ test("every registered family forges a clean model with default parameters", () 
 test("blade segments tile the texture continuously instead of repeating it", async () => {
   const { getFamily } = await import("../lib/generators/index.js");
   const parts = getFamily("weapon-sword").build({ variant: "greatsword" });
-  const segments = parts.filter(p => p.uvRange && /^blade_\d+_spine$/.test(p.name));
+  const segments = parts.filter(p => p.uvRange && /^blade_\d+_(fuller|spine|tip)$/.test(p.name));
   assert.ok(segments.length >= 8, "expected many sliced blade segments, got " + segments.length);
   segments.sort((a, b) => a.from[1] - b.from[1]);
   assert.ok(Math.abs(segments[0].uvRange.v2 - 1) < 1e-6, "the blade base must sample the bottom of the tile, got v2=" + segments[0].uvRange.v2);
