@@ -40,3 +40,18 @@ test("the crossguard stays proportionate to the blade", () => {
   const size = forged.stats.bounds.size;
   assert.ok(size[0] < size[1] / 3.5, "the guard must not rival the blade length, got " + JSON.stringify(size));
 });
+test("the blade is flat, not a bar", () => {
+  for (const variant of ["longsword", "greatsword", "dagger"]) {
+    const parts = getFamily("weapon-sword").build({ variant });
+    const blade = parts.filter(p => /^blade_/.test(p.name));
+    assert.ok(blade.length > 0, variant + " has no blade parts");
+    const halfDepth = Math.max(...blade.map(p => Math.max(Math.abs(p.from[2]), Math.abs(p.to[2]))));
+    const depth = halfDepth * 2;
+    const profile = bladeProfile(parts);
+    const width = profile[0].hw * 2;
+    const ratio = depth / width;
+    assert.ok(ratio >= 0.1 && ratio <= 0.3, variant + " blade depth/width must be 0.10-0.30, got " + ratio.toFixed(2));
+    const length = profile[profile.length - 1].y1 - profile[0].y0;
+    assert.ok(depth < length / 12, variant + " blade too thick against its own length: " + depth.toFixed(2));
+  }
+});
