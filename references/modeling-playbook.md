@@ -141,6 +141,6 @@ taperAt(halfWidth, t):
 
 1. **HTTP 桥** `lib/frame-server.js`：监听 `127.0.0.1:9879`（`BB_ATELIER_PANEL_PORT` 覆盖）。`GET /frame.png` 走通道 `see` 抓当前视口，`GET /status.json` 报连接状态 / 工程名 / 格式 / 元素数 / 帧计数。800ms 缓存 + 单飞，避免重复压 Blockbench。
 2. **依赖注入**：桥把「通道请求」作为参数注入，自己只依赖 `node:http` —— 因此不背 DSH peer 依赖，可以用假通道做单测。
-3. **客户端 bundle** `lib/client.js`：`window.__ModuleLoader__.load({ id, factory })`，只能 `require("react")`，不得 ESM / Node 内置 / 顶层 await。挂 `sidebar.panellist`（入口图标）+ `main`（页面，`key` 与入口 `id` 相同）。
+3. **客户端 bundle** `lib/client.js`：`window.__ModuleLoader__.load({ id, factory })`，只能 `require("react")`，不得 ESM / Node 内置 / 顶层 await。入口用 **`ctx.betterSidebar.registerTab({ id, title, icon, order, single, component })`**（`dsh-better-sidebar` 的服务，客户端 `inject: ["betterSidebar"]`），组件收到 `{ scope, visible }`，`visible` 为假时停轮询。`sidebar.panellist` 是另一个座位（侧边栏图标条），页面不要挂它。
 4. **接线**：`package.json` 的 `dsh.client = { inject: [], platform: "web" }` 与 `exports["./client"]`。
 5. **验收**：桥可以 `curl` 验（真机验过 53,788 字节 PNG、`connected:true`、缓存命中）；客户端面板要重启 DSH 才加载，重启会结束当前会话 —— 所以分两段验。

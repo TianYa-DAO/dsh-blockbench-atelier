@@ -1,5 +1,27 @@
 # Changelog
 
+## v0.16.0
+
+**面板入口改挂 `betterSidebar.registerTab`** —— 之前用错了座位，面板没出现在用户要的那个标签列表里。
+
+### 问题
+
+v0.14.0 把面板注册到 `sidebar.panellist` + `main` 两个 slot。那是侧边栏的图标条座位，用户要的是 `dsh-better-sidebar` 的**标签页列表**（文件 / Git / 任务管理 / 浏览器 / 记忆系统 那一列）。
+
+### 修正
+
+1. 客户端改为 `inject: ["betterSidebar"]`，在 `ctx.effect` 里调 **`ctx.betterSidebar.registerTab({ id, title, icon, order: 65, single: true, component })`**。
+2. 组件按契约接收 `{ scope, visible }`：**`visible` 为假时停止轮询**，不再靠 `document.visibilityState` 猜。
+3. 去掉了 `sidebar.panellist` 与 `main` 两处注册。
+4. 手册第 12 节把这条 API 纠回正确写法，并标注 `sidebar.panellist` 是图标条座位、页面不要挂它。
+
+### 契约来源（实测抄自本机已装插件）
+
+1. `dsh-better-sidebar` 的 `README.md`：`ctx.betterSidebar.registerTab` / `registerFileViewer` 是其对外两个扩展点。
+2. `dsh-mnemon` 的客户端 tab 用法：`id` / `title: () => t(...)` / `icon: (size) => <Icon size={size} />` / `order` / `single` / `component: ({ scope, visible })`。
+3. 侧边对话 tab 的用法：额外支持 `available` 与 `createTab`。
+
+## v0.15.1
 ## v0.15.1
 
 **把剑形三轮修正的经验写进技能与手册**（纯文档版，不改代码）。

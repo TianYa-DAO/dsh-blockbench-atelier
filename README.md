@@ -140,7 +140,7 @@ npm run check
 3. curl -o frame.png http://127.0.0.1:9879/frame.png
    期望: 得到一张 PNG，尺寸 480x480
 4. 重启 DSH
-5. 侧边栏应出现 "Blockbench" 入口，点开看到实时画面
+5. 侧边栏标签列表里应出现 "Blockbench"（与 任务管理 / 浏览器 / 记忆系统 同一列），点开看到实时画面
 6. 在 Blockbench 里转动视角，面板 1.5 秒内跟着变
 ```
 
