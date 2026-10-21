@@ -149,3 +149,37 @@ npm run check
 1. `curl` 连不上 9879：插件没启动桥，或端口被占 —— 设置 `BB_ATELIER_PANEL_PORT` 换个端口，并同步改前端 `localStorage["dsh-blockbench-atelier:bridge"]`。
 2. `status.json` 里 `channel.connected=false`：Blockbench 没开或 addon 没加载，先跑 `mc_live_doctor(op="doctor")`。
 3. 侧边栏没有入口：DSH 没重启，或 `dsh.client` 字段没被宿主读到（检查 `package.json`）。
+### 交互（v0.17.0）
+
+1. **按住拖动** = 绕模型转视角。面板驱动的是 Blockbench 的相机（`main_preview.camera` + `controls.target`），所以**那边看到的视角会跟着变** —— 这是方案 A 的取舍（方案 B 要内嵌 three.js 才能独立相机）。
+2. **滚轮** = 拉近 / 推远（上滚拉近）。
+3. **Live / Paused** = 自动刷新开关；**Refresh** = 手动抓一帧。
+4. 拖动时按 90ms 合帧发送，滚轮按 140ms 合并，避免每像素一次请求。
+
+### 相机接口（桥）
+
+1. `GET /orbit?dx=<px>&dy=<px>` —— 绕目标点旋转，`dx/dy` 是像素位移，内部按 0.006 rad/px 换算。
+2. `GET /zoom?d=<deltaY>` —— 半径乘 `exp(d/420)`，夹在 0.5-2.0；也可直接 `?zoom=1.2`。
+3. `GET /status.json` 多了 `orbits` 计数与 `camera{radius,theta,phi,position,target}`。
+4. 每次相机移动会**主动清掉帧缓存**，下一次 `/frame.png` 一定拿到新帧。
+## 方案 B 评估（内嵌 three.js 独立相机，未实施）
+
+**结论：可行，但约 2-3 个版本的工程量，建议在方案 A 手感确认后再做。**
+
+### 为什么值得做
+
+1. 独立相机，60fps 自由旋转，**不影响 Blockbench 那边看到的视角**。
+2. Blockbench 关掉也能看模型（从桥拿几何即可）。
+
+### 需要解决的四个问题
+
+1. **打包**：当前 `lib/client.js` 是手写单文件、零打包器，只保证能 `require("react")`。内嵌 three.js（约 600KB）需要引入打包或懒加载分包，仓库里还没有构建链。
+2. **几何转换**：要把 `.bbmodel` 的 cube 转成 three 的 mesh —— 每个 cube 6 个面，按 `face.uv` 采样 128px 内嵌图集，还要处理 `rotation`/`origin`（我们 v0.11.0 起大量使用旋转骨骼）。
+3. **贴图**：图集是 base64 内嵌在 bbmodel 里的，前端要转成 `THREE.Texture`，注意 `nearest` 过滤否则像素会糊。
+4. **宿主兼容**：客户端 bundle 的重依赖加载要走宿主的懒加载链路（本机有 `plugin-heavy-dep` 技能专讲这件事），失败要有降级（退回方案 A 的静态帧）。
+
+### 建议的推进顺序
+
+1. 先让桥多暴露一个 `GET /model.json`（返回 bbmodel JSON + 图集 base64）—— 这一步无论如何都有用，方案 A 加「当前工程信息」也要用它。
+2. 再做 three.js 查看器，作为独立 tab 或方案 A 面板里的「独立视角」开关。
+3. 保留方案 A 作为降级路径（重依赖加载失败时退回远程帧）。

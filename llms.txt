@@ -74,3 +74,7 @@
 ## 侧边栏实时画面（v0.14.0）
 
 插件自带 DSH 侧边栏面板显示 Blockbench 当前视口。HTTP 桥 `http://127.0.0.1:9879`：`/frame.png` 抓帧、`/status.json` 报状态。需要重启 DSH 才加载客户端。
+
+## 侧边栏面板交互（v0.17.0）
+
+面板可拖动转视角、滚轮缩放：桥 `GET /orbit?dx=&dy=` 与 `GET /zoom?d=`，走通道 `eval` 操作全局 `main_preview`（camera + controls.target + render()），不需要改 Blockbench addon。

@@ -1,5 +1,38 @@
 # Changelog
 
+## v0.17.0
+
+**侧边栏面板可以自由转视角了**（方案 A：远程视口）。
+
+### 能力
+
+1. **拖动**绕模型旋转，**滚轮**拉近推远，走 HTTP 桥 → 通道 `eval` → Blockbench 相机，**不需要更新 Blockbench 侧 addon**。
+2. 桥新增 `GET /orbit?dx=&dy=` 与 `GET /zoom?d=`，`/status.json` 多了 `orbits` 与 `camera` 状态。
+3. 相机一动手动**清帧缓存**，下一次抓帧必然是新的。
+
+### 关键技术发现
+
+Blockbench 5.2.2 的相机**不在 `Canvas` 上**（`Canvas.scene` 里也没有相机子节点，addon 的 `has_camera` 一直是 false）。真正入口是全局 `main_preview`：`camera` / `controls`（`controls.target` 就是模型中心）/ `render()`。
+
+`render()` 必须显式调用 —— 窗口被遮挡时只抓 canvas 会拿到旧帧。另：**不要**调 `controls.update()`，它会用内部旧球坐标覆盖手写的相机位置。
+
+### 手感修正（真机验证时发现）
+
+1. 滚轮方向反了（上滚反而推远）→ 改为半径乘 `exp(deltaY/420)`，上滚半径变小。
+2. 拖动过敏（160px 转了 110°）→ 步长从 0.012 降到 0.006 rad/px。
+
+### 验证
+
+1. 真机：`/orbit?dx=160&dy=-30` → 相机移到 `[-23.8,-11.7,-45.0]`，帧哈希 `a53fc44…` → `bb85ad7…`（画面确实变了）。
+2. `/zoom?d=-260` → 半径 56.2 → 30.3（拉近），帧哈希再变。
+3. `status.orbits=2`、`frames=3`，缓存失效逻辑生效。
+4. `npm test` **56/56**（新增 5 条：参数夹取、轨道代码内容、滚轮换算、桥的 orbit 路由与缓存失效、空请求拒绝）。
+
+### 已知取舍
+
+方案 A 会**同步改变 Blockbench 那边的视角**（共用一个相机）。若要不影响 Blockbench，需要方案 B（内嵌 three.js 独立相机），评估结论见交付说明。
+
+## v0.16.0
 ## v0.16.0
 
 **面板入口改挂 `betterSidebar.registerTab`** —— 之前用错了座位，面板没出现在用户要的那个标签列表里。

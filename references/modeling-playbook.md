@@ -144,3 +144,18 @@ taperAt(halfWidth, t):
 3. **客户端 bundle** `lib/client.js`：`window.__ModuleLoader__.load({ id, factory })`，只能 `require("react")`，不得 ESM / Node 内置 / 顶层 await。入口用 **`ctx.betterSidebar.registerTab({ id, title, icon, order, single, component })`**（`dsh-better-sidebar` 的服务，客户端 `inject: ["betterSidebar"]`），组件收到 `{ scope, visible }`，`visible` 为假时停轮询。`sidebar.panellist` 是另一个座位（侧边栏图标条），页面不要挂它。
 4. **接线**：`package.json` 的 `dsh.client = { inject: [], platform: "web" }` 与 `exports["./client"]`。
 5. **验收**：桥可以 `curl` 验（真机验过 53,788 字节 PNG、`connected:true`、缓存命中）；客户端面板要重启 DSH 才加载，重启会结束当前会话 —— 所以分两段验。
+### 12.1 远程转视角（方案 A，v0.17.0 实测）
+
+Blockbench 5.2.2 的相机**不在 `Canvas` 上**（`Canvas.scene` 里也没有 isCamera 子节点），真正的入口是全局 `main_preview`：
+
+1. `main_preview.camera` —— PerspectiveCamera。
+2. `main_preview.controls` —— OrbitControls 实例，`controls.target` 是模型中心（实测 `[0,12,0]`），还有 `minDistance` / `maxDistance`。
+3. `main_preview.render()` —— 强制重绘一帧；**不调它的话，窗口被遮挡时抓帧会是旧的**。
+
+轨道旋转做法：把 `camera.position - controls.target` 转成球坐标 `(radius, theta, phi)`，改 theta/phi（0.006 rad/px）、radians 夹在 `[0.06, PI-0.06]`，再写回笛卡尔坐标 + `camera.lookAt(target)` + `camera.updateMatrixWorld(true)` + `main_preview.render()`。
+
+**不要**调 `controls.update()`：它会用内部旧的球坐标把位置覆盖回去。
+
+滚轮缩放：半径乘 `exp(deltaY / 420)`，上滚（deltaY 为负）半径变小 = 拉近。
+
+这条链路全部走 addon 的 `eval`，**不需要改 Blockbench 侧插件**。
